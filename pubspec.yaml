@@ -1,0 +1,41 @@
+name: pdf_reader_app
+description: A new Flutter project.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # PDF Extraction
+  syncfusion_flutter_pdf: ^31.2.12
+  
+  # Database
+  isar: ^3.1.0
+  isar_flutter_libs: ^3.1.0
+  
+  # Networking
+  http: ^1.2.0
+  url_launcher: ^6.2.5
+  
+  # State Management
+  provider: ^6.1.1
+  
+  # File Handling
+  file_picker: ^10.3.7
+  path_provider: ^2.1.2
+  audioplayers: ^6.5.1
+  google_fonts: ^6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  isar_generator: ^3.1.0
+  build_runner: ^2.4.8
+
+flutter:
+  uses-material-design: true

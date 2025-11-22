@@ -1,0 +1,9 @@
+subprojects {
+    afterEvaluate {
+        if (name == 'isar_flutter_libs') {
+            android {
+                namespace 'dev.isar.isar_flutter_libs'
+            }
+        }
+    }
+}
