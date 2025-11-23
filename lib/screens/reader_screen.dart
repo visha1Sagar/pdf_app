@@ -24,10 +24,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   PdfDocument? _document;
   int _totalPages = 0;
   final Map<int, String> _pageContent = {};
+  final Map<int, Widget> _pageWidgetCache = {}; // Cache built widgets for better performance
   bool _isLoading = true;
+  bool _isPreloading = false;
   
   late PageController _pageController;
   Book? _book;
+  int _currentPage = 0;
 
   // Selection State
   bool _isSelectionMode = false;
@@ -77,15 +80,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (initialPage >= _totalPages) initialPage = 0;
       
       _pageController = PageController(initialPage: initialPage);
+      _currentPage = initialPage;
       
-      // Load initial window
-      await _loadPageWindow(initialPage);
+      // Load initial window with more aggressive preloading
+      await _loadPageWindow(initialPage, aggressive: true);
       
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
+      
+      // Start background preloading after initial load
+      _startBackgroundPreloading();
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -96,39 +103,92 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
-  Future<void> _loadPageWindow(int centerIndex) async {
+  Future<void> _loadPageWindow(int centerIndex, {bool aggressive = false}) async {
     if (_document == null) return;
     final pdfService = Provider.of<PdfService>(context, listen: false);
 
-    // Load 5 pages before and 5 pages after
-    int start = (centerIndex - 5).clamp(0, _totalPages - 1);
-    int end = (centerIndex + 5).clamp(0, _totalPages - 1);
+    // Aggressive preloading: load 10 pages before and after for smooth scrolling
+    // Normal: load 5 pages before and after
+    final window = aggressive ? 10 : 7;
+    int start = (centerIndex - window).clamp(0, _totalPages - 1);
+    int end = (centerIndex + window).clamp(0, _totalPages - 1);
 
-    bool needsUpdate = false;
-
-    for (int i = start; i <= end; i++) {
-      if (!_pageContent.containsKey(i)) {
-        // Extract text if not already loaded
-        // We use a microtask to avoid blocking UI too much in loop
-        await Future.delayed(Duration.zero); 
-        String text = pdfService.extractPageText(_document!, i);
-        _pageContent[i] = text;
-        needsUpdate = true;
+    // Prioritize pages closest to current page
+    final pagesToLoad = <int>[];
+    for (int offset = 0; offset <= window; offset++) {
+      final prevPage = centerIndex - offset;
+      final nextPage = centerIndex + offset;
+      
+      if (prevPage >= start && !_pageContent.containsKey(prevPage)) {
+        pagesToLoad.add(prevPage);
+      }
+      if (nextPage <= end && nextPage != prevPage && !_pageContent.containsKey(nextPage)) {
+        pagesToLoad.add(nextPage);
       }
     }
 
-    // Clean up pages far away to save memory (optional, but good for huge books)
-    // Keep a buffer of 20 pages?
-    _pageContent.removeWhere((key, value) => (key < centerIndex - 10 || key > centerIndex + 10));
+    bool needsUpdate = false;
+    for (int i = 0; i < pagesToLoad.length; i++) {
+      final pageIndex = pagesToLoad[i];
+      
+      // Yield to event loop every 2 pages to keep UI responsive
+      if (i % 2 == 0) await Future.delayed(Duration.zero);
+      
+      String text = pdfService.extractPageText(_document!, pageIndex, cachePath: widget.filePath);
+      _pageContent[pageIndex] = text;
+      needsUpdate = true;
+    }
+
+    // Keep a buffer of 25 pages to avoid reloading on back-and-forth navigation
+    final removedPages = <int>[];
+    _pageContent.removeWhere((key, value) {
+      final shouldRemove = (key < centerIndex - 15 || key > centerIndex + 15);
+      if (shouldRemove) removedPages.add(key);
+      return shouldRemove;
+    });
+    
+    // Also clear widget cache for removed pages
+    for (final page in removedPages) {
+      _pageWidgetCache.remove(page);
+    }
 
     if (needsUpdate && mounted) {
       setState(() {});
     }
   }
+  
+  // Background preloader for upcoming pages
+  void _startBackgroundPreloading() async {
+    if (_isPreloading) return;
+    _isPreloading = true;
+    
+    while (mounted && _document != null) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (!mounted || _document == null) break;
+      
+      // Preload pages ahead of current position
+      final currentIndex = _currentPage;
+      final pdfService = Provider.of<PdfService>(context, listen: false);
+      
+      // Preload next 15 pages if not already loaded
+      for (int i = currentIndex + 8; i <= currentIndex + 15 && i < _totalPages; i++) {
+        if (!_pageContent.containsKey(i)) {
+          await Future.delayed(Duration.zero);
+          String text = pdfService.extractPageText(_document!, i, cachePath: widget.filePath);
+          _pageContent[i] = text;
+        }
+      }
+    }
+    
+    _isPreloading = false;
+  }
 
   void _toggleFullScreen() {
     setState(() {
       _isFullScreen = !_isFullScreen;
+      // Clear widget cache since layout changes in fullscreen
+      _pageWidgetCache.clear();
     });
     
     if (_isFullScreen) {
@@ -148,19 +208,32 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _onPageChanged(int index) {
-    if (mounted) setState(() {}); // Refresh to update app bar counter
+    _currentPage = index;
+    
+    // Update app bar counter without setState for better performance
+    // The PageView.builder will handle page rendering
+    
+    // Update progress asynchronously to avoid blocking
     if (_book != null) {
-      Provider.of<LibraryProvider>(context, listen: false).updateProgress(_book!.id, index);
+      Future.microtask(() {
+        if (mounted) {
+          Provider.of<LibraryProvider>(context, listen: false).updateProgress(_book!.id, index);
+        }
+      });
     }
-    // Trigger lazy load for new window
-    _loadPageWindow(index);
+    
+    // Trigger lazy load for new window asynchronously
+    Future.microtask(() {
+      if (mounted) {
+        _loadPageWindow(index);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentPage = _pageController.hasClients 
-        ? (_pageController.page?.round() ?? 0) + 1 
-        : (_book?.lastReadPage ?? 0) + 1;
+    // Use tracked current page instead of reading from controller for better performance
+    final currentPage = _currentPage + 1;
 
     return WillPopScope(
       onWillPop: () async {
@@ -215,6 +288,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     _selectionEnd = null;
                     _selectedPhrase = "";
                   }
+                  // Clear widget cache when toggling selection mode
+                  // so widgets rebuild with/without selection handlers
+                  _pageWidgetCache.clear();
                 });
               },
             ),
@@ -275,14 +351,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         controller: _pageController,
                         onPageChanged: _onPageChanged,
                         itemCount: _totalPages,
+                        physics: const BouncingScrollPhysics(), // Smoother scrolling physics
+                        pageSnapping: true, // Ensure proper page snapping
                         itemBuilder: (context, index) {
                           // Check if page content is loaded
                           if (!_pageContent.containsKey(index)) {
                             return const Center(child: CircularProgressIndicator());
                           }
                           
+                          // Use cached widget if available and not in selection mode
+                          // (selection mode needs fresh widgets for interaction)
+                          if (!_isSelectionMode && _pageWidgetCache.containsKey(index)) {
+                            return _pageWidgetCache[index]!;
+                          }
+                          
                           final content = _pageContent[index]!;
-                          return SingleChildScrollView(
+                          final pageWidget = SingleChildScrollView(
+                            key: ValueKey('page_$index'), // Add key for better widget reuse
+                            physics: const ClampingScrollPhysics(), // Better scrolling within page
                             padding: EdgeInsets.fromLTRB(
                               16.0, 
                               _isFullScreen ? 32.0 : 16.0, // Add top padding in full screen
@@ -305,6 +391,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               ],
                             ),
                           );
+                          
+                          // Cache the widget if not in selection mode
+                          if (!_isSelectionMode) {
+                            _pageWidgetCache[index] = pageWidget;
+                          }
+                          
+                          return pageWidget;
                         },
                       ),
             if (_isFullScreen && !_isSelectionMode)
