@@ -5,8 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/pdf_service.dart';
 import '../services/library_provider.dart';
+import '../services/database_service.dart';
 import '../models/book.dart';
+import '../models/note.dart';
 import '../widgets/definition_bottom_sheet.dart';
+import '../widgets/note_dialog.dart';
+import '../widgets/notes_list_widget.dart';
 
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
@@ -276,6 +280,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
               onPressed: _showAppearanceSettings,
             ),
             IconButton(
+              icon: const Icon(Icons.note_add),
+              tooltip: 'Add Note',
+              onPressed: _addNote,
+            ),
+            IconButton(
               icon: Icon(_isSelectionMode ? Icons.check_circle : Icons.select_all),
               tooltip: _isSelectionMode ? 'Finish Selection' : 'Select Phrase',
               color: _isSelectionMode ? Colors.green : null,
@@ -301,8 +310,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 onPressed: () => _onWordTap(_selectedPhrase, _selectedContext),
                 label: const Text('Define Phrase'),
                 icon: const Icon(Icons.search),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
               )
-            : null,
+            : (!_isFullScreen
+                ? FloatingActionButton(
+                    onPressed: _addNote,
+                    tooltip: 'Add Note',
+                    child: const Icon(Icons.note_add_rounded),
+                  )
+                : null),
         bottomNavigationBar: (_totalPages > 0 && !_isFullScreen)
             ? Container(
                 height: 56,
@@ -386,6 +403,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                     ),
                                   ),
                                 const SizedBox(height: 16),
+                                NotesListWidget(
+                                  bookPath: widget.filePath,
+                                  pageNumber: index,
+                                ),
                                 _buildClickableText(content),
                                 const SizedBox(height: 40),
                               ],
@@ -587,6 +608,40 @@ class _ReaderScreenState extends State<ReaderScreen> {
     
     _selectedPhrase = words.sublist(start, end + 1).join(' ');
     _selectedContext = context;
+  }
+
+  void _addNote() async {
+    final databaseService = Provider.of<DatabaseService>(context, listen: false);
+    
+    final result = await showDialog<Note>(
+      context: context,
+      builder: (context) => NoteDialog(
+        pageNumber: _currentPage,
+        bookPath: widget.filePath,
+        selectedText: _selectedPhrase.isNotEmpty ? _selectedPhrase : null,
+      ),
+    );
+
+    if (result != null && mounted) {
+      await databaseService.saveNote(result);
+      
+      // Clear selection if any
+      if (_isSelectionMode) {
+        setState(() {
+          _isSelectionMode = false;
+          _selectionStart = null;
+          _selectionEnd = null;
+          _selectedPhrase = "";
+          _pageWidgetCache.clear();
+        });
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Note added successfully')),
+        );
+      }
+    }
   }
 
   void _showManualSearch() {

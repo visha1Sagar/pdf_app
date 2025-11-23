@@ -8,6 +8,7 @@ import '../widgets/empty_library_view.dart';
 import 'reader_screen.dart';
 import 'vocabulary_screen.dart';
 import 'flashcard_screen.dart';
+import 'notes_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,10 +30,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _currentIndex == 0 ? 'My Library' : 'Vocabulary',
+          _currentIndex == 0 ? 'My Library' : (_currentIndex == 1 ? 'Notes' : 'Vocabulary'),
         ),
         actions: [
-          if (_currentIndex == 1)
+          if (_currentIndex == 2)
             IconButton(
               icon: const Icon(Icons.style_outlined),
               tooltip: 'Flashcards Mode',
@@ -56,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _currentIndex,
         children: [
           _buildLibraryView(libraryProvider),
+          const NotesScreen(),
           const VocabularyList(),
         ],
       ),
@@ -71,6 +73,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.library_books_outlined),
             selectedIcon: Icon(Icons.library_books),
             label: 'Library',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.note_outlined),
+            selectedIcon: Icon(Icons.note),
+            label: 'Notes',
           ),
           NavigationDestination(
             icon: Icon(Icons.school_outlined),
