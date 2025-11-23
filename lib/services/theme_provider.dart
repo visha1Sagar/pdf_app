@@ -16,15 +16,15 @@ class ThemeProvider with ChangeNotifier {
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    scaffoldBackgroundColor: const Color(0xFFF8F9FA), // Soft off-white
+    scaffoldBackgroundColor: const Color(0xFFF5F7FA), // Soft off-white with hint of blue
     colorScheme: const ColorScheme.light(
-      primary: Color(0xFF2C3E50), // Dark Slate Blue
-      secondary: Color(0xFFE67E22), // Muted Orange/Bronze accent
+      primary: Color(0xFF667EEA), // Modern Vibrant Purple
+      secondary: Color(0xFF764BA2), // Deep Purple accent
       surface: Colors.white,
-      background: Color(0xFFF8F9FA),
-      onBackground: Color(0xFF2C3E50),
-      onSurface: Color(0xFF2C3E50),
-      tertiary: Color(0xFF1ABC9C), // Teal for success/active states
+      background: Color(0xFFF5F7FA),
+      onBackground: Color(0xFF1A202C),
+      onSurface: Color(0xFF1A202C),
+      tertiary: Color(0xFF4FACFE), // Bright blue for accents
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -56,11 +56,11 @@ class ThemeProvider with ChangeNotifier {
         textStyle: GoogleFonts.lato(fontWeight: FontWeight.bold),
       ),
     ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: Color(0xFF2C3E50),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: const Color(0xFF667EEA),
       foregroundColor: Colors.white,
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
     textTheme: TextTheme(
       headlineLarge: GoogleFonts.libreBaskerville(
@@ -99,15 +99,15 @@ class ThemeProvider with ChangeNotifier {
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    scaffoldBackgroundColor: const Color(0xFF121212), // True Black/Dark Grey
+    scaffoldBackgroundColor: const Color(0xFF0F0F1E), // Deep blue-black
     colorScheme: const ColorScheme.dark(
-      primary: Color(0xFF90CAF9), // Soft Blue
-      secondary: Color(0xFFFFCC80), // Soft Orange
-      surface: Color(0xFF1E1E1E),
-      background: Color(0xFF121212),
-      onBackground: Color(0xFFE0E0E0),
-      onSurface: Color(0xFFE0E0E0),
-      tertiary: Color(0xFF80CBC4),
+      primary: Color(0xFF8B9DFF), // Soft lavender blue
+      secondary: Color(0xFFB794F6), // Soft purple
+      surface: Color(0xFF1A1A2E),
+      background: Color(0xFF0F0F1E),
+      onBackground: Color(0xFFE5E7EB),
+      onSurface: Color(0xFFE5E7EB),
+      tertiary: Color(0xFF66D9EF),
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: const Color(0xFF121212),
@@ -139,11 +139,11 @@ class ThemeProvider with ChangeNotifier {
         textStyle: GoogleFonts.lato(fontWeight: FontWeight.bold),
       ),
     ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: Color(0xFF90CAF9),
-      foregroundColor: Color(0xFF121212),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: const Color(0xFF8B9DFF),
+      foregroundColor: const Color(0xFF0F0F1E),
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
     textTheme: TextTheme(
       headlineLarge: GoogleFonts.libreBaskerville(

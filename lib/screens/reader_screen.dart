@@ -248,18 +248,31 @@ class _ReaderScreenState extends State<ReaderScreen> {
         return true;
       },
       child: Scaffold(
-        extendBodyBehindAppBar: true, // Allow content to flow behind app bar when shown/hidden
+        extendBodyBehindAppBar: false,
         appBar: _isFullScreen 
             ? null 
             : AppBar(
+          elevation: 0,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Navigator.pop(context),
+          ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_book?.title ?? 'Reader', style: const TextStyle(fontSize: 16)),
+              Text(
+                _book?.title ?? 'Reader',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               if (_totalPages > 0)
                 Text(
                   'Page $currentPage of $_totalPages',
-                  style: Theme.of(context).textTheme.labelSmall,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+                  ),
                 ),
             ],
           ),
@@ -322,39 +335,87 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 : null),
         bottomNavigationBar: (_totalPages > 0 && !_isFullScreen)
             ? Container(
-                height: 56,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  border: Border(top: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.1))),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    IconButton(
-                      onPressed: currentPage > 1
-                          ? () => _pageController.previousPage(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              )
-                          : null,
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-                      tooltip: 'Previous Page',
-                    ),
-                    Text(
-                      '$currentPage / $_totalPages',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    IconButton(
-                      onPressed: currentPage < _totalPages
-                          ? () => _pageController.nextPage(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              )
-                          : null,
-                      icon: const Icon(Icons.arrow_forward_ios_rounded, size: 20),
-                      tooltip: 'Next Page',
+                  color: Theme.of(context).colorScheme.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      offset: const Offset(0, -2),
+                      blurRadius: 8,
                     ),
                   ],
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            onPressed: currentPage > 1
+                                ? () => _pageController.previousPage(
+                                      duration: const Duration(milliseconds: 300),
+                                      curve: Curves.easeInOut,
+                                    )
+                                : null,
+                            icon: Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 20,
+                              color: currentPage > 1
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).disabledColor,
+                            ),
+                            tooltip: 'Previous Page',
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                Theme.of(context).colorScheme.secondary.withOpacity(0.15),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '$currentPage / $_totalPages',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            onPressed: currentPage < _totalPages
+                                ? () => _pageController.nextPage(
+                                      duration: const Duration(milliseconds: 300),
+                                      curve: Curves.easeInOut,
+                                    )
+                                : null,
+                            icon: Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 20,
+                              color: currentPage < _totalPages
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).disabledColor,
+                            ),
+                            tooltip: 'Next Page',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               )
             : null,
