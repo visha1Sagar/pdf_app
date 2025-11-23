@@ -103,6 +103,12 @@ class _DefinitionBottomSheetState extends State<DefinitionBottomSheet> {
       }
     }
 
+    // Determine API source
+    final apiSource = _definitions != null && _definitions!.isNotEmpty 
+        ? _definitions!.first.source 
+        : null;
+    final isMerriamWebster = apiSource == 'merriam-webster';
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       width: double.infinity,
@@ -114,6 +120,52 @@ class _DefinitionBottomSheetState extends State<DefinitionBottomSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // API Source Indicator
+          if (apiSource != null)
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: isMerriamWebster 
+                    ? const Color(0xFF4CAF50).withOpacity(0.1)
+                    : const Color(0xFF2196F3).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isMerriamWebster 
+                      ? const Color(0xFF4CAF50)
+                      : const Color(0xFF2196F3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: isMerriamWebster 
+                          ? const Color(0xFF4CAF50)
+                          : const Color(0xFF2196F3),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isMerriamWebster 
+                        ? 'Merriam-Webster API'
+                        : 'Free Dictionary API',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isMerriamWebster 
+                          ? const Color(0xFF4CAF50)
+                          : const Color(0xFF2196F3),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Row(
             children: [
               Expanded(
