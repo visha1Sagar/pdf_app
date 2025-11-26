@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
   isar_flutter_libs
+  syncfusion_pdfviewer_windows
   url_launcher_windows
 )
 

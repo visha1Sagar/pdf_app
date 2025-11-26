@@ -14,7 +14,7 @@
 class ApiConfig {
   /// 🔑 PUT YOUR MERRIAM-WEBSTER API KEY HERE
   /// Get it from: https://dictionaryapi.com/register/index
-  static const String merriamWebsterApiKey = 'YOUR API KEY';
+  static const String merriamWebsterApiKey = 'YOUR_API_KEY_HERE';
   
   // Check if API key is configured
   static bool get isMerriamWebsterConfigured => 
